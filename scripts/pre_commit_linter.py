@@ -1089,8 +1089,8 @@ def _lint_py_files(
 
     print 'Python linting finished.'
 
-def _lint_html_files(node_path, htmllint_path, files_to_lint,
-    results, verbose_mode_enabled):
+def _lint_html_files(node_path, htmllint_path, files_to_lint, results,
+                     verbose_mode_enabled):
     """This function is used to check HTML files for linting errors."""
 
     error_summary = []
