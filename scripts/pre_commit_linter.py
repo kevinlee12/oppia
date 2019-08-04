@@ -1089,6 +1089,64 @@ def _lint_py_files(
 
     print 'Python linting finished.'
 
+def _lint_html_files(node_path, htmllint_path, files_to_lint,
+    results, verbose_mode_enabled):
+    """This function is used to check HTML files for linting errors."""
+
+    error_summary = []
+    total_error_count = 0
+    results_list = []
+
+    total_html_files = len(files_to_lint)
+    print 'Total html files: ', total_html_files
+    if not files_to_lint:
+        results.put('')
+        print 'There are no HTML files to lint.'
+        return
+
+
+    htmllint_cmd_args = [node_path, htmllint_path, '--rc=.htmllintrc']
+    if verbose_mode_enabled:
+        print 'Starting HTML linter...'
+        print '----------------------------------------'
+    print ''
+    if not verbose_mode_enabled:
+        print 'Linting HTML files.'
+    for filepath in files_to_lint:
+        proc_args = htmllint_cmd_args + [filepath]
+        if verbose_mode_enabled:
+            print 'Linting %s file' % filepath
+        with _redirect_stdout(_TARGET_STDOUT):
+            proc = subprocess.Popen(
+                proc_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            linter_stdout, _ = proc.communicate()
+            # This line splits the output of the linter and extracts digits
+            # from it. The digits are stored in a list. The second last
+            # digit in the list represents the number of errors in the file.
+            error_count = (
+                [int(s) for s in linter_stdout.split() if s.isdigit()][-2])
+            if error_count:
+                error_summary.append(error_count)
+                results_list.append(linter_stdout)
+                print linter_stdout
+
+    total_error_count = sum(error_summary)
+    if total_error_count:
+        for result in results_list:
+            result.put(result)
+        print '(%s files checked, %s errors found)' % (
+            total_html_files, total_error_count)
+        summary_message = '%s   HTML linting failed' % (
+            _MESSAGE_TYPE_FAILED)
+        results.put(summary_message)
+    else:
+        summary_message = '%s   HTML linting passed' % (
+            _MESSAGE_TYPE_SUCCESS)
+        results.put(summary_message)
+
+    print 'HTML linting finished.'
+
 
 class LintChecksManager(object):
     """Manages all the linting functions.
@@ -1116,7 +1174,7 @@ class LintChecksManager(object):
 
         self.all_filepaths = all_filepaths
         self.verbose_mode_enabled = verbose_mode_enabled
-        self.parsed_js_and_ts_files = self._validate_and_parse_js_and_ts_files()
+        # self.parsed_js_and_ts_files = self._validate_and_parse_js_and_ts_files()
 
     def _validate_and_parse_js_and_ts_files(self):
         """This function validates JavaScript and Typescript files and
@@ -1187,124 +1245,6 @@ class LintChecksManager(object):
             dir_path, os.path.basename(filepath).replace('.ts', '.js'))
         return compiled_js_filepath
 
-    def _lint_all_files(self):
-        """This function is used to check if node-eslint dependencies are
-        installed and pass ESLint binary path and lint all the files(JS, Python,
-        HTML, CSS) with their respective third party linters.
-        """
-
-        print 'Starting linter...'
-
-        pylintrc_path = os.path.join(os.getcwd(), '.pylintrc')
-
-        config_pylint = '--rcfile=%s' % pylintrc_path
-
-        config_pycodestyle = os.path.join(os.getcwd(), 'tox.ini')
-
-        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-
-        node_path = os.path.join(
-            parent_dir, 'oppia_tools', 'node-10.15.3', 'bin', 'node')
-        eslint_path = os.path.join(
-            'node_modules', 'eslint', 'bin', 'eslint.js')
-        stylelint_path = os.path.join(
-            'node_modules', 'stylelint', 'bin', 'stylelint.js')
-        config_path_for_css_in_html = os.path.join(
-            parent_dir, 'oppia', '.stylelintrc')
-        config_path_for_oppia_css = os.path.join(
-            parent_dir, 'oppia', 'core', 'templates', 'dev', 'head',
-            'css', '.stylelintrc')
-        if not (os.path.exists(eslint_path) and os.path.exists(stylelint_path)):
-            print ''
-            print 'ERROR    Please run start.sh first to install node-eslint '
-            print '         or node-stylelint and its dependencies.'
-            sys.exit(1)
-
-        js_and_ts_files_to_lint = [
-            filepath for filepath in self.all_filepaths if filepath.endswith(
-                ('.js', '.ts'))]
-        py_files_to_lint = [
-            filepath for filepath in self.all_filepaths if filepath.endswith(
-                '.py')]
-        html_files_to_lint_for_css = [
-            filepath for filepath in self.all_filepaths if filepath.endswith(
-                '.html')]
-        css_files_to_lint = [
-            filepath for filepath in self.all_filepaths if filepath.endswith(
-                'oppia.css')]
-
-        css_in_html_result = multiprocessing.Queue()
-        css_in_html_stdout = multiprocessing.Queue()
-
-        linting_processes = []
-        linting_processes.append(multiprocessing.Process(
-            target=_lint_css_files, args=(
-                node_path,
-                stylelint_path,
-                config_path_for_css_in_html,
-                html_files_to_lint_for_css, css_in_html_stdout,
-                css_in_html_result, self.verbose_mode_enabled)))
-
-        css_result = multiprocessing.Queue()
-        css_stdout = multiprocessing.Queue()
-
-        linting_processes.append(multiprocessing.Process(
-            target=_lint_css_files, args=(
-                node_path,
-                stylelint_path,
-                config_path_for_oppia_css,
-                css_files_to_lint, css_stdout,
-                css_result, self.verbose_mode_enabled)))
-
-        js_and_ts_result = multiprocessing.Queue()
-        js_and_ts_stdout = multiprocessing.Queue()
-
-        linting_processes.append(multiprocessing.Process(
-            target=_lint_js_and_ts_files, args=(
-                node_path, eslint_path, js_and_ts_files_to_lint,
-                js_and_ts_stdout, js_and_ts_result, self.verbose_mode_enabled)))
-
-        py_result = multiprocessing.Queue()
-
-        linting_processes.append(multiprocessing.Process(
-            target=_lint_py_files,
-            args=(
-                config_pylint, config_pycodestyle, py_files_to_lint,
-                py_result, self.verbose_mode_enabled)))
-
-        if self.verbose_mode_enabled:
-            print 'Starting CSS, Javascript and Python Linting'
-            print '----------------------------------------'
-
-        for process in linting_processes:
-            process.daemon = False
-            process.start()
-
-        for process in linting_processes:
-            process.join()
-
-        js_and_ts_messages = []
-        while not js_and_ts_stdout.empty():
-            js_and_ts_messages.append(js_and_ts_stdout.get())
-
-        print ''
-        print '\n'.join(js_and_ts_messages)
-
-        summary_messages = []
-
-        result_queues = [
-            css_in_html_result, css_result,
-            js_and_ts_result, py_result]
-
-        for result_queue in result_queues:
-            while not result_queue.empty():
-                summary_messages.append(result_queue.get())
-
-        with _redirect_stdout(_TARGET_STDOUT):
-            print '\n'.join(summary_messages)
-            print ''
-
-        return summary_messages
 
     def _check_directive_scope(self):
         """This function checks that all directives have an explicit
@@ -2090,70 +2030,6 @@ class LintChecksManager(object):
 
         return summary_messages
 
-    def _lint_html_files(self):
-        """This function is used to check HTML files for linting errors."""
-        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-
-        node_path = os.path.join(
-            parent_dir, 'oppia_tools', 'node-10.15.3', 'bin', 'node')
-        htmllint_path = os.path.join(
-            'node_modules', 'htmllint-cli', 'bin', 'cli.js')
-
-        error_summary = []
-        total_error_count = 0
-        summary_messages = []
-        htmllint_cmd_args = [node_path, htmllint_path, '--rc=.htmllintrc']
-        html_files_to_lint = [
-            filepath for filepath in self.all_filepaths if filepath.endswith(
-                '.html')]
-        if self.verbose_mode_enabled:
-            print 'Starting HTML linter...'
-            print '----------------------------------------'
-        print ''
-        if not self.verbose_mode_enabled:
-            print 'Linting HTML files.'
-        for filepath in html_files_to_lint:
-            proc_args = htmllint_cmd_args + [filepath]
-            if self.verbose_mode_enabled:
-                print 'Linting %s file' % filepath
-            with _redirect_stdout(_TARGET_STDOUT):
-                proc = subprocess.Popen(
-                    proc_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                linter_stdout, _ = proc.communicate()
-                # This line splits the output of the linter and extracts digits
-                # from it. The digits are stored in a list. The second last
-                # digit in the list represents the number of errors in the file.
-                error_count = (
-                    [int(s) for s in linter_stdout.split() if s.isdigit()][-2])
-                if error_count:
-                    error_summary.append(error_count)
-                    print linter_stdout
-
-        with _redirect_stdout(_TARGET_STDOUT):
-            if self.verbose_mode_enabled:
-                print '----------------------------------------'
-            for error_count in error_summary:
-                total_error_count += error_count
-            total_files_checked = len(html_files_to_lint)
-            if total_error_count:
-                print '(%s files checked, %s errors found)' % (
-                    total_files_checked, total_error_count)
-                summary_message = '%s   HTML linting failed' % (
-                    _MESSAGE_TYPE_FAILED)
-                summary_messages.append(summary_message)
-            else:
-                summary_message = '%s   HTML linting passed' % (
-                    _MESSAGE_TYPE_SUCCESS)
-                summary_messages.append(summary_message)
-
-            print ''
-            print summary_message
-            print 'HTML linting finished.'
-            print ''
-
-        return summary_messages
-
     def _check_bad_patterns(self):
         """This function is used for detecting bad patterns."""
         if self.verbose_mode_enabled:
@@ -2514,6 +2390,137 @@ class LintChecksManager(object):
 
         return summary_messages
 
+
+    def _lint_all_files(self):
+        """This function is used to check if node-eslint dependencies are
+        installed and pass ESLint binary path and lint all the files(JS, Python,
+        HTML, CSS) with their respective third party linters.
+        """
+
+        print 'Starting linter...'
+
+        pylintrc_path = os.path.join(os.getcwd(), '.pylintrc')
+
+        config_pylint = '--rcfile=%s' % pylintrc_path
+
+        config_pycodestyle = os.path.join(os.getcwd(), 'tox.ini')
+
+        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+
+        node_path = os.path.join(
+            parent_dir, 'oppia_tools', 'node-10.15.3', 'bin', 'node')
+        eslint_path = os.path.join(
+            'node_modules', 'eslint', 'bin', 'eslint.js')
+        stylelint_path = os.path.join(
+            'node_modules', 'stylelint', 'bin', 'stylelint.js')
+        config_path_for_css_in_html = os.path.join(
+            parent_dir, 'oppia', '.stylelintrc')
+        config_path_for_oppia_css = os.path.join(
+            parent_dir, 'oppia', 'core', 'templates', 'dev', 'head',
+            'css', '.stylelintrc')
+        htmllint_path = os.path.join(
+            'node_modules', 'htmllint-cli', 'bin', 'cli.js')
+        if not (os.path.exists(eslint_path) and os.path.exists(stylelint_path)):
+            print ''
+            print 'ERROR    Please run start.sh first to install node-eslint '
+            print '         or node-stylelint and its dependencies.'
+            sys.exit(1)
+
+        js_and_ts_files_to_lint = [
+            filepath for filepath in self.all_filepaths if filepath.endswith(
+                ('.js', '.ts'))]
+        py_files_to_lint = [
+            filepath for filepath in self.all_filepaths if filepath.endswith(
+                '.py')]
+        html_files_to_lint = [
+            filepath for filepath in self.all_filepaths if filepath.endswith(
+                '.html')]
+        css_files_to_lint = [
+            filepath for filepath in self.all_filepaths if filepath.endswith(
+                'oppia.css')]
+
+        css_in_html_result = multiprocessing.Queue()
+        css_in_html_stdout = multiprocessing.Queue()
+
+        linting_processes = []
+        linting_processes.append(multiprocessing.Process(
+            target=_lint_css_files, args=(
+                node_path,
+                stylelint_path,
+                config_path_for_css_in_html,
+                html_files_to_lint, css_in_html_stdout,
+                css_in_html_result, self.verbose_mode_enabled)))
+
+        css_result = multiprocessing.Queue()
+        css_stdout = multiprocessing.Queue()
+
+        linting_processes.append(multiprocessing.Process(
+            target=_lint_css_files, args=(
+                node_path,
+                stylelint_path,
+                config_path_for_oppia_css,
+                css_files_to_lint, css_stdout,
+                css_result, self.verbose_mode_enabled)))
+
+        js_and_ts_result = multiprocessing.Queue()
+        js_and_ts_stdout = multiprocessing.Queue()
+
+        linting_processes.append(multiprocessing.Process(
+            target=_lint_js_and_ts_files, args=(
+                node_path, eslint_path, js_and_ts_files_to_lint,
+                js_and_ts_stdout, js_and_ts_result, self.verbose_mode_enabled)))
+
+        py_result = multiprocessing.Queue()
+
+        linting_processes.append(multiprocessing.Process(
+            target=_lint_py_files,
+            args=(
+                config_pylint, config_pycodestyle, py_files_to_lint,
+                py_result, self.verbose_mode_enabled)))
+
+        html_result = multiprocessing.Queue()
+
+        linting_processes.append(multiprocessing.Process(
+            target=_lint_html_files,
+            args=(
+                node_path, htmllint_path, html_files_to_lint,
+                html_result, self.verbose_mode_enabled)))
+
+        if self.verbose_mode_enabled:
+            print 'Starting CSS, Javascript, Python, and HTML Linting'
+            print '----------------------------------------'
+
+        for process in linting_processes:
+            process.daemon = False
+            process.start()
+
+        for process in linting_processes:
+            process.join()
+
+        js_and_ts_messages = []
+        while not js_and_ts_stdout.empty():
+            js_and_ts_messages.append(js_and_ts_stdout.get())
+
+        print ''
+        print '\n'.join(js_and_ts_messages)
+
+        summary_messages = []
+
+        result_queues = [
+            css_in_html_result, css_result,
+            js_and_ts_result, py_result, html_result]
+
+        for result_queue in result_queues:
+            while not result_queue.empty():
+                summary_messages.append(result_queue.get())
+
+        with _redirect_stdout(_TARGET_STDOUT):
+            print '\n'.join(summary_messages)
+            print ''
+
+        return summary_messages
+
+
     def perform_all_lint_checks(self):
         """Perform all the lint checks and returns the messages returned by all
         the checks.
@@ -2522,35 +2529,35 @@ class LintChecksManager(object):
             all_messages: str. All the messages returned by the lint checks.
         """
 
-        linter_messages = self._lint_all_files()
-        extra_js_files_messages = self._check_extra_js_files()
-        js_and_ts_component_messages = (
-            self._check_js_and_ts_component_name_and_count())
-        directive_scope_messages = self._check_directive_scope()
-        mandatory_patterns_messages = self._check_mandatory_patterns()
-        sorted_dependencies_messages = (
-            self._check_sorted_dependencies())
-        controller_dependency_messages = (
-            self._match_line_breaks_in_controller_dependencies())
-        import_order_messages = self._check_import_order()
-        docstring_messages = self._check_docstrings()
-        comment_messages = self._check_comments()
-        # The html tags and attributes check has an additional
-        # debug mode which when enabled prints the tag_stack for each file.
-        html_tag_and_attribute_messages = (
-            self._check_html_tags_and_attributes())
-        html_linter_messages = self._lint_html_files()
-        pattern_messages = self._check_bad_patterns()
-        codeowner_messages = self._check_codeowner_file()
-        constants_messages = self._check_constants_declaration()
-        all_messages = (
-            extra_js_files_messages + js_and_ts_component_messages +
-            directive_scope_messages + sorted_dependencies_messages +
-            controller_dependency_messages + import_order_messages +
-            mandatory_patterns_messages + docstring_messages +
-            comment_messages + html_tag_and_attribute_messages +
-            html_linter_messages + linter_messages + pattern_messages +
-            codeowner_messages + constants_messages)
+        all_messages = self._lint_all_files()
+        # linter_messages = self._lint_all_files()
+        # extra_js_files_messages = self._check_extra_js_files()
+        # js_and_ts_component_messages = (
+        #     self._check_js_and_ts_component_name_and_count())
+        # directive_scope_messages = self._check_directive_scope()
+        # mandatory_patterns_messages = self._check_mandatory_patterns()
+        # sorted_dependencies_messages = (
+        #     self._check_sorted_dependencies())
+        # controller_dependency_messages = (
+        #     self._match_line_breaks_in_controller_dependencies())
+        # import_order_messages = self._check_import_order()
+        # docstring_messages = self._check_docstrings()
+        # comment_messages = self._check_comments()
+        # # The html tags and attributes check has an additional
+        # # debug mode which when enabled prints the tag_stack for each file.
+        # html_tag_and_attribute_messages = (
+        #     self._check_html_tags_and_attributes())
+        # pattern_messages = self._check_bad_patterns()
+        # codeowner_messages = self._check_codeowner_file()
+        # constants_messages = self._check_constants_declaration()
+        # all_messages = (
+        #     extra_js_files_messages + js_and_ts_component_messages +
+        #     directive_scope_messages + sorted_dependencies_messages +
+        #     controller_dependency_messages + import_order_messages +
+        #     mandatory_patterns_messages + docstring_messages +
+        #     comment_messages + html_tag_and_attribute_messages +
+        #     html_linter_messages + linter_messages + pattern_messages +
+        #     codeowner_messages + constants_messages)
         return all_messages
 
 
