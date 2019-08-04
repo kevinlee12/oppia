@@ -2585,8 +2585,8 @@ def main():
     lint_checks_manager = LintChecksManager(all_filepaths, verbose_mode_enabled)
     lint_manager_setup_end = time.time()
     print lint_manager_setup_end
-    print 'Total time manager: ' +
-        str(lint_manager_setup_end - lint_manager_setup_start)
+    print 'Total time manager: %s' % (
+        (lint_manager_setup_end - lint_manager_setup_start))
     print '====================================================='
     print '====================================================='
     lint_start_time = time.time()
@@ -2594,7 +2594,7 @@ def main():
     all_messages = lint_checks_manager.perform_all_lint_checks()
     lint_end_time = time.time()
     print lint_end_time
-    print 'Total time: ' + str(lint_end_time - lint_start_time)
+    print 'Total time: %s' % ((lint_end_time - lint_start_time))
     print '====================================================='
     _print_complete_summary_of_errors()
 
