@@ -1174,7 +1174,7 @@ class LintChecksManager(object):
 
         self.all_filepaths = all_filepaths
         self.verbose_mode_enabled = verbose_mode_enabled
-        # self.parsed_js_and_ts_files = self._validate_and_parse_js_and_ts_files()
+        self.parsed_js_and_ts_files = self._validate_and_parse_js_and_ts_files()
 
     def _validate_and_parse_js_and_ts_files(self):
         """This function validates JavaScript and Typescript files and
@@ -2529,35 +2529,34 @@ class LintChecksManager(object):
             all_messages: str. All the messages returned by the lint checks.
         """
 
-        all_messages = self._lint_all_files()
-        # linter_messages = self._lint_all_files()
-        # extra_js_files_messages = self._check_extra_js_files()
-        # js_and_ts_component_messages = (
-        #     self._check_js_and_ts_component_name_and_count())
-        # directive_scope_messages = self._check_directive_scope()
-        # mandatory_patterns_messages = self._check_mandatory_patterns()
-        # sorted_dependencies_messages = (
-        #     self._check_sorted_dependencies())
-        # controller_dependency_messages = (
-        #     self._match_line_breaks_in_controller_dependencies())
-        # import_order_messages = self._check_import_order()
-        # docstring_messages = self._check_docstrings()
-        # comment_messages = self._check_comments()
-        # # The html tags and attributes check has an additional
-        # # debug mode which when enabled prints the tag_stack for each file.
-        # html_tag_and_attribute_messages = (
-        #     self._check_html_tags_and_attributes())
-        # pattern_messages = self._check_bad_patterns()
-        # codeowner_messages = self._check_codeowner_file()
-        # constants_messages = self._check_constants_declaration()
-        # all_messages = (
-        #     extra_js_files_messages + js_and_ts_component_messages +
-        #     directive_scope_messages + sorted_dependencies_messages +
-        #     controller_dependency_messages + import_order_messages +
-        #     mandatory_patterns_messages + docstring_messages +
-        #     comment_messages + html_tag_and_attribute_messages +
-        #     html_linter_messages + linter_messages + pattern_messages +
-        #     codeowner_messages + constants_messages)
+        linter_messages = self._lint_all_files()
+        extra_js_files_messages = self._check_extra_js_files()
+        js_and_ts_component_messages = (
+            self._check_js_and_ts_component_name_and_count())
+        directive_scope_messages = self._check_directive_scope()
+        mandatory_patterns_messages = self._check_mandatory_patterns()
+        sorted_dependencies_messages = (
+            self._check_sorted_dependencies())
+        controller_dependency_messages = (
+            self._match_line_breaks_in_controller_dependencies())
+        import_order_messages = self._check_import_order()
+        docstring_messages = self._check_docstrings()
+        comment_messages = self._check_comments()
+        # The html tags and attributes check has an additional
+        # debug mode which when enabled prints the tag_stack for each file.
+        html_tag_and_attribute_messages = (
+            self._check_html_tags_and_attributes())
+        pattern_messages = self._check_bad_patterns()
+        codeowner_messages = self._check_codeowner_file()
+        constants_messages = self._check_constants_declaration()
+        all_messages = (
+            extra_js_files_messages + js_and_ts_component_messages +
+            directive_scope_messages + sorted_dependencies_messages +
+            controller_dependency_messages + import_order_messages +
+            mandatory_patterns_messages + docstring_messages +
+            comment_messages + html_tag_and_attribute_messages +
+            linter_messages + pattern_messages +
+            codeowner_messages + constants_messages)
         return all_messages
 
 
