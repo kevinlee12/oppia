@@ -49,15 +49,6 @@ anchor_for_restoring_cache: &restore_cache
     - setup-files-cache-{{ checksum "date" }}
     - third-party-cache-{{ checksum "date" }}
 
-anchor_for_installing_chrome: &install_chrome
-  name: Install Chrome
-  command: |
-    sudo apt-get install lsb-release libappindicator3-1
-    curl -L -o google-chrome.deb https://github.com/webnicer/chrome-downloads/raw/master/x64.deb/google-chrome-stable_67.0.3396.99-1_amd64.deb
-    sudo dpkg -i google-chrome.deb
-    sudo sed -i 's|HERE/chrome"|HERE/chrome" --disable-setuid-sandbox|g' /opt/google/chrome/google-chrome
-    rm google-chrome.deb
-
 version: 2
 jobs:
   setup:
@@ -159,8 +150,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run accessibility e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="accessibility" --prod_env --sharding=false
@@ -172,8 +161,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run additionalEditorAndPlayerFeatures e2e Tests
           command: |
@@ -187,8 +174,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run collections e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="collections" --prod_env --sharding=false
@@ -200,8 +185,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run coreEditorAndPlayerFeatures e2e Tests
           command: |
@@ -215,8 +198,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run embedding e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="embedding" --prod_env --sharding=false
@@ -228,8 +209,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run explorationFeedbackTab e2e Tests
           command: |
@@ -243,8 +222,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run explorationHistoryTab e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="explorationHistoryTab" --prod_env --sharding=false
@@ -256,8 +233,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run explorationStatisticsTab e2e Tests
           command: |
@@ -271,8 +246,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run explorationTranslationTab e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="explorationTranslationTab" --prod_env --sharding=false
@@ -284,8 +257,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run extensions e2e Tests
           command: |
@@ -299,8 +270,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run learnerDashboard e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="learnerDashboard" --prod_env --sharding=false
@@ -312,8 +281,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run learner e2e Tests
           command: |
@@ -327,8 +294,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run library e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="library" --prod_env --sharding=false
@@ -340,8 +305,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run navigation e2e Tests
           command: |
@@ -355,8 +318,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run preferences e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="preferences" --prod_env --sharding=false
@@ -368,8 +329,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run profileMenu e2e Tests
           command: |
@@ -383,8 +342,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run publication e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="publication" --prod_env --sharding=false
@@ -396,8 +353,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run skillEditor e2e Tests
           command: |
@@ -411,8 +366,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run subscriptions e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="subscriptions" --prod_env --sharding=false
@@ -424,8 +377,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run topicsAndSkillsDashboard e2e Tests
           command: |
@@ -439,8 +390,6 @@ jobs:
     #   - restore_cache:
     #       <<: *restore_cache
       - run:
-          <<: *install_chrome
-      - run:
           name: Run topicAndStoryEditor e2e Tests
           command: |
             bash scripts/run_e2e_tests.sh --suite="topicAndStoryEditor" --prod_env --sharding=false
@@ -452,8 +401,6 @@ jobs:
       - run: date +%F > date
     #   - restore_cache:
     #       <<: *restore_cache
-      - run:
-          <<: *install_chrome
       - run:
           name: Run users e2e Tests
           command: |
