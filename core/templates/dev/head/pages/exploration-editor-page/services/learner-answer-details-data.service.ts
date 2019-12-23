@@ -18,7 +18,7 @@
  */
 
 require('pages/exploration-editor-page/services/exploration-data.service.ts');
-require('domain/utilities/UrlInterpolationService.ts');
+require('domain/utilities/url-interpolation.service.ts');
 require('domain/statistics/LearnerAnswerInfoObjectFactory.ts');
 require('domain/statistics/LearnerAnswerDetailsObjectFactory.ts');
 
@@ -64,8 +64,8 @@ angular.module('oppia').factory('LearnerAnswerDetailsDataService', [
       },
       fetchLearnerAnswerInfoData: function() {
         return _fetchLearnerAnswerInfoData().then(function(response) {
-          learnerAnswerInfoData = angular.copy(
-            response.data.learner_answer_info_data);
+          learnerAnswerInfoData =
+            response.data.learner_answer_info_data;
           for (var i = 0; i < learnerAnswerInfoData.length; i++) {
             var stateName = learnerAnswerInfoData[i].state_name;
             var interactionId = learnerAnswerInfoData[i].interaction_id;

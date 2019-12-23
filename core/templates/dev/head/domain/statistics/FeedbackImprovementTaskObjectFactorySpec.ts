@@ -26,7 +26,7 @@ import { AnswerGroupObjectFactory } from
   'domain/exploration/AnswerGroupObjectFactory';
 import { ClassifierObjectFactory } from
   'domain/classifier/ClassifierObjectFactory';
-import { EditabilityService } from 'services/EditabilityService';
+import { EditabilityService } from 'services/editability.service';
 import { ExplorationDraftObjectFactory } from
   'domain/exploration/ExplorationDraftObjectFactory';
 import { FeedbackThreadObjectFactory } from
@@ -58,7 +58,7 @@ import { StateEditorService } from
 import { SubtitledHtmlObjectFactory } from
   'domain/exploration/SubtitledHtmlObjectFactory';
 /* eslint-enable max-len */
-import { SuggestionModalService } from 'services/SuggestionModalService';
+import { SuggestionModalService } from 'services/suggestion-modal.service';
 /* eslint-disable max-len */
 import { ThreadStatusDisplayService } from
   'pages/exploration-editor-page/feedback-tab/services/thread-status-display.service';
@@ -71,6 +71,11 @@ import { WrittenTranslationObjectFactory } from
   'domain/exploration/WrittenTranslationObjectFactory';
 import { WrittenTranslationsObjectFactory } from
   'domain/exploration/WrittenTranslationsObjectFactory';
+import { LearnerAnswerDetailsObjectFactory } from
+  'domain/statistics/LearnerAnswerDetailsObjectFactory';
+import { LearnerAnswerInfoObjectFactory } from
+  'domain/statistics/LearnerAnswerInfoObjectFactory';
+import { UpgradedServices } from 'services/UpgradedServices';
 // ^^^ This block is to be removed.
 
 require('domain/statistics/FeedbackImprovementTaskObjectFactory.ts');
@@ -142,6 +147,17 @@ describe('FeedbackImprovementTaskObjectFactory', function() {
       'WrittenTranslationsObjectFactory',
       new WrittenTranslationsObjectFactory(
         new WrittenTranslationObjectFactory()));
+    $provide.value(
+      'LearnerAnswerDetailsObjectFactory',
+      new LearnerAnswerDetailsObjectFactory());
+    $provide.value(
+      'LearnerAnswerInfoObjectFactory', new LearnerAnswerInfoObjectFactory());
+  }));
+  beforeEach(angular.mock.module('oppia', function($provide) {
+    var ugs = new UpgradedServices();
+    for (let [key, value] of Object.entries(ugs.getUpgradedServices())) {
+      $provide.value(key, value);
+    }
   }));
   beforeEach(angular.mock.inject(function(
       _$q_, _$rootScope_, _$uibModal_, _FeedbackImprovementTaskObjectFactory_,
@@ -162,6 +178,7 @@ describe('FeedbackImprovementTaskObjectFactory', function() {
       var mockThread = {threadId: 1};
       var task = FeedbackImprovementTaskObjectFactory.createNew(mockThread);
 
+      expect(task.isObsolete()).toBe(false);
       expect(task.getDirectiveData()).toBe(mockThread);
       expect(task.getDirectiveType()).toEqual(FEEDBACK_IMPROVEMENT_TASK_TYPE);
     });
@@ -169,13 +186,23 @@ describe('FeedbackImprovementTaskObjectFactory', function() {
 
   describe('.fetchTasks', function() {
     it('fetches threads from the backend', function(done) {
-      spyOn(ThreadDataService, 'fetchThreads').and.callFake($q.resolve);
-      spyOn(ThreadDataService, 'fetchMessages').and.callFake($q.resolve);
-      spyOn(ThreadDataService, 'getData').and.returnValue({
-        feedbackThreads: [{threadId: 'abc1'}, {threadId: 'def2'}]
+      var threads = {
+        feedbackThreads: [{ threadId: 'abc1' }, { threadId: 'def2' }]
+      };
+
+      spyOn(ThreadDataService, 'fetchThreads').and.callFake(function() {
+        ThreadDataService.data = threads;
+        var deferred = $q.defer();
+        deferred.resolve();
+        return deferred.promise;
       });
+      var fetchMessagesSpy = spyOn(ThreadDataService, 'fetchMessages').and
+        .callFake(done);
+      spyOn(ThreadDataService, 'getData').and.returnValue(threads);
 
       FeedbackImprovementTaskObjectFactory.fetchTasks().then(function(tasks) {
+        expect(fetchMessagesSpy).toHaveBeenCalledTimes(threads.feedbackThreads
+          .length);
         expect(tasks[0].getDirectiveData().threadId).toEqual('abc1');
         expect(tasks[1].getDirectiveData().threadId).toEqual('def2');
       }).then(done, done.fail);

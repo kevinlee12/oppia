@@ -27,7 +27,7 @@ from core.domain import config_domain
 from core.domain import config_services
 from core.domain import exp_domain
 from core.domain import exp_services
-from core.domain import question_services
+from core.domain import question_fetchers
 from core.domain import recommendations_services
 from core.domain import rights_manager
 from core.domain import search_services
@@ -240,7 +240,7 @@ class AdminIntegrationTest(test_utils.GenericTestBase):
         skill_summaries = skill_services.get_all_skill_summaries()
         self.assertEqual(len(skill_summaries), 3)
         questions, _, _ = (
-            question_services.get_questions_and_skill_descriptions_by_skill_ids(
+            question_fetchers.get_questions_and_skill_descriptions_by_skill_ids(
                 10, [
                     skill_summaries[0].id, skill_summaries[1].id,
                     skill_summaries[2].id], '')
@@ -290,7 +290,7 @@ class AdminIntegrationTest(test_utils.GenericTestBase):
         exp_services.save_new_exploration(owner_id, exploration)
 
         topic = topic_domain.Topic.create_default_topic(
-            topic_id=topic_id, name='topic')
+            topic_id=topic_id, name='topic', abbreviated_name='abbrev')
         topic_services.save_new_topic(owner_id, topic)
 
         story = story_domain.Story.create_default_story(
@@ -872,7 +872,8 @@ class AdminRoleHandlerTest(test_utils.GenericTestBase):
 
         topic_id = topic_services.get_new_topic_id()
         self.save_new_topic(
-            topic_id, user_id, 'Name', 'Description', [], [], [], [], 1)
+            topic_id, user_id, 'Name', 'abbrev', None,
+            'Description', [], [], [], [], 1)
 
         self.login(self.ADMIN_EMAIL, is_super_admin=True)
 

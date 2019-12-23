@@ -20,6 +20,7 @@ from __future__ import unicode_literals  # pylint: disable=import-only-modules
 
 import contextlib
 import copy
+import datetime
 import inspect
 import itertools
 import json
@@ -576,7 +577,7 @@ tags: []
             is_super_admin: bool. Whether the user is a super admin.
        """
         os.environ['USER_EMAIL'] = email
-        os.environ['USER_ID'] = self.get_user_id_from_email(email)
+        os.environ['USER_ID'] = self.get_gae_id_from_email(email)
         os.environ['USER_IS_ADMIN'] = '1' if is_super_admin else '0'
 
     def logout(self):
@@ -585,6 +586,7 @@ tags: []
         os.environ['USER_ID'] = ''
         os.environ['USER_IS_ADMIN'] = '0'
 
+    # pylint: enable=invalid-name
     def shortDescription(self):
         """Additional information logged during unit test invocation."""
         # Suppress default logging of docstrings.
@@ -913,6 +915,8 @@ tags: []
         # immediately once the signup is complete. This is done to avoid
         # external  calls being made to Gravatar when running the backend
         # tests.
+        gae_id = self.get_gae_id_from_email(email)
+        user_services.create_new_user(gae_id, email)
         with self.urlfetch_mock():
             response = self.get_html_response(feconf.SIGNUP_URL)
             self.assertEqual(response.status_int, 200)
@@ -1005,15 +1009,28 @@ tags: []
             self.set_user_role(name, feconf.ROLE_ID_COLLECTION_EDITOR)
 
     def get_user_id_from_email(self, email):
-        """Gets the user_id corresponding to the given email.
+        """Gets the user ID corresponding to the given email.
 
         Args:
             email: str. A valid email stored in the App Engine database.
 
         Returns:
-            user_id: str. ID of the user possessing the given email.
+            str. ID of the user possessing the given email.
         """
-        return current_user_services.get_user_id_from_email(email)
+        gae_id = self.get_gae_id_from_email(email)
+        return (
+            user_services.get_user_settings_by_gae_id(gae_id).user_id)
+
+    def get_gae_id_from_email(self, email):
+        """Gets the GAE user ID corresponding to the given email.
+
+        Args:
+            email: str. A valid email stored in the App Engine database.
+
+        Returns:
+            str. GAE ID of the user possessing the given email.
+        """
+        return current_user_services.get_gae_id_from_email(email)
 
     def save_new_default_exploration(
             self, exploration_id, owner_id, title='A title'):
@@ -1365,7 +1382,7 @@ tags: []
             self, story_id, owner_id, title, description, notes,
             corresponding_topic_id,
             language_code=constants.DEFAULT_LANGUAGE_CODE):
-        """Saves a new skill with a default version 1 story contents
+        """Saves a new story with a default version 1 story contents
         data dictionary.
 
         This function should only be used for creating stories in tests
@@ -1408,9 +1425,10 @@ tags: []
             }])
 
     def save_new_topic(
-            self, topic_id, owner_id, name, description,
-            canonical_story_ids, additional_story_ids, uncategorized_skill_ids,
-            subtopics, next_subtopic_id,
+            self, topic_id, owner_id, name, abbreviated_name,
+            thumbnail_filename, description,
+            canonical_story_ids, additional_story_ids,
+            uncategorized_skill_ids, subtopics, next_subtopic_id,
             language_code=constants.DEFAULT_LANGUAGE_CODE):
         """Creates an Oppia Topic and saves it.
 
@@ -1418,6 +1436,8 @@ tags: []
             topic_id: str. ID for the topic to be created.
             owner_id: str. The user_id of the creator of the topic.
             name: str. The name of the topic.
+            abbreviated_name: str. The abbreviated name of the topic.
+            thumbnail_filename: str|None. The thumbnail filename of the topic.
             description: str. The desscription of the topic.
             canonical_story_ids: list(str). The list of ids of canonical stories
                 that are part of the topic.
@@ -1443,7 +1463,8 @@ tags: []
             for story_id in additional_story_ids
         ]
         topic = topic_domain.Topic(
-            topic_id, name, description, canonical_story_references,
+            topic_id, name, abbreviated_name, thumbnail_filename,
+            description, canonical_story_references,
             additional_story_references, uncategorized_skill_ids, subtopics,
             feconf.CURRENT_SUBTOPIC_SCHEMA_VERSION, next_subtopic_id,
             language_code, 0, feconf.CURRENT_STORY_REFERENCE_SCHEMA_VERSION
@@ -1452,7 +1473,8 @@ tags: []
         return topic
 
     def save_new_topic_with_subtopic_schema_v1(
-            self, topic_id, owner_id, name, canonical_name, description,
+            self, topic_id, owner_id, name, abbreviated_name,
+            canonical_name, description,
             canonical_story_references, additional_story_references,
             uncategorized_skill_ids, next_subtopic_id,
             language_code=constants.DEFAULT_LANGUAGE_CODE):
@@ -1472,6 +1494,7 @@ tags: []
             topic_id: str. ID for the topic to be created.
             owner_id: str. The user_id of the creator of the topic.
             name: str. The name of the topic.
+            abbreviated_name: str. The abbreviated name of the topic.
             canonical_name: str. The canonical name (lowercase) of the topic.
             description: str. The desscription of the topic.
             canonical_story_references: list(StoryReference). A set of story
@@ -1494,6 +1517,7 @@ tags: []
         topic_model = topic_models.TopicModel(
             id=topic_id,
             name=name,
+            abbreviated_name=abbreviated_name,
             canonical_name=canonical_name,
             description=description,
             language_code=language_code,
@@ -1583,21 +1607,24 @@ tags: []
     def save_new_skill(
             self, skill_id, owner_id,
             description, misconceptions=None, rubrics=None, skill_contents=None,
-            language_code=constants.DEFAULT_LANGUAGE_CODE):
+            language_code=constants.DEFAULT_LANGUAGE_CODE,
+            prerequisite_skill_ids=None):
         """Creates an Oppia Skill and saves it.
 
         Args:
             skill_id: str. ID for the skill to be created.
             owner_id: str. The user_id of the creator of the skill.
             description: str. The description of the skill.
-            misconceptions: list(Misconception). A list of Misconception objects
-                that contains the various misconceptions of the skill.
-            rubrics: list(Rubric). A list of Rubric objects that contain the
-                rubric for each difficulty of the skill.
-            skill_contents: SkillContents. A SkillContents object containing the
-                explanation and examples of the skill.
+            misconceptions: list(Misconception)|None. A list of Misconception
+                objects that contains the various misconceptions of the skill.
+            rubrics: list(Rubric)|None. A list of Rubric objects that contain
+                the rubric for each difficulty of the skill.
+            skill_contents: SkillContents|None. A SkillContents object
+                containing the explanation and examples of the skill.
             language_code: str. The ISO 639-1 code for the language this
                 skill is written in.
+            prerequisite_skill_ids: list(str)|None. The prerequisite skill IDs
+                for the skill.
 
         Returns:
             Skill. A newly-created skill.
@@ -1609,6 +1636,8 @@ tags: []
             skill.next_misconception_id = len(misconceptions) + 1
         if skill_contents is not None:
             skill.skill_contents = skill_contents
+        if prerequisite_skill_ids is not None:
+            skill.prerequisite_skill_ids = prerequisite_skill_ids
         if rubrics is not None:
             skill.rubrics = rubrics
         else:
@@ -1724,6 +1753,56 @@ tags: []
         slash.
         """
         return '/assets%s%s' % (utils.get_asset_dir_prefix(), asset_suffix)
+
+    @contextlib.contextmanager
+    def mock_datetime_utcnow(self, mocked_datetime):
+        """Mocks response from datetime.datetime.utcnow method.
+
+        Example usage:
+            import datetime
+            mocked_datetime_utcnow = datetime.datetime.utcnow() -
+                datetime.timedelta(days=1)
+            with self.mock_datetime_utcnow(mocked_datetime_utcnow):
+                print datetime.datetime.utcnow() # prints time reduced by 1 day
+            print datetime.datetime.utcnow()  # prints current time.
+
+        Args:
+            mocked_datetime: datetime.datetime.
+                The datetime which will be used instead of
+                the current UTC datetime.
+
+        Yields:
+            nothing.
+        """
+        if not isinstance(mocked_datetime, datetime.datetime):
+            raise utils.ValidationError(
+                'Expected mocked_datetime to be datetime.datetime, got %s' % (
+                    type(mocked_datetime)))
+
+        original_datetime_type = datetime.datetime
+
+        class PatchedDatetimeType(type):
+            """Validates the datetime instances."""
+            def __instancecheck__(cls, other):
+                """Validates whether the given instance is datetime
+                instance.
+                """
+                return isinstance(other, original_datetime_type)
+
+        class MockDatetime( # pylint: disable=inherit-non-class
+                python_utils.with_metaclass(
+                    PatchedDatetimeType, datetime.datetime)):
+            @classmethod
+            def utcnow(cls):
+                """Returns the mocked datetime."""
+                return mocked_datetime
+
+        setattr(datetime, 'datetime', MockDatetime)
+
+        try:
+            yield
+        finally:
+            setattr(datetime, 'datetime', original_datetime_type)
 
     @contextlib.contextmanager
     def swap(self, obj, attr, newvalue):

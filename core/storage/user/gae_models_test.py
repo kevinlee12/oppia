@@ -35,12 +35,15 @@ class UserSettingsModelTest(test_utils.GenericTestBase):
 
     NONEXISTENT_USER_ID = 'id_x'
     USER_1_ID = 'user_id'
+    USER_1_GAE_ID = 'gae_id'
     USER_1_EMAIL = 'user@example.com'
     USER_1_ROLE = feconf.ROLE_ID_ADMIN
     USER_2_ID = 'user2_id'
+    USER_2_GAE_ID = 'gae2_id'
     USER_2_EMAIL = 'user2@example.com'
     USER_2_ROLE = feconf.ROLE_ID_BANNED_USER
     USER_3_ID = 'user3_id'
+    USER_3_GAE_ID = 'gae3_id'
     USER_3_EMAIL = 'user3@example.com'
     USER_3_ROLE = feconf.ROLE_ID_ADMIN
     GENERIC_USERNAME = 'user'
@@ -58,19 +61,21 @@ class UserSettingsModelTest(test_utils.GenericTestBase):
     def setUp(self):
         super(UserSettingsModelTest, self).setUp()
         user_models.UserSettingsModel(
-            id=self.USER_1_ID, email=self.USER_1_EMAIL, role=self.USER_1_ROLE
+            id=self.USER_1_ID,
+            gae_id=self.USER_1_GAE_ID,
+            email=self.USER_1_EMAIL,
+            role=self.USER_1_ROLE
         ).put()
         user_models.UserSettingsModel(
             id=self.USER_2_ID,
+            gae_id=self.USER_2_GAE_ID,
             email=self.USER_2_EMAIL,
             role=self.USER_2_ROLE,
             deleted=True
         ).put()
         user_models.UserSettingsModel(
-            email=self.USER_3_EMAIL, role=self.USER_3_ROLE
-        ).put()
-        user_models.UserSettingsModel(
             id=self.USER_3_ID,
+            gae_id=self.USER_3_GAE_ID,
             email=self.USER_3_EMAIL,
             role=self.USER_3_ROLE,
             username=self.GENERIC_USERNAME,
@@ -110,6 +115,11 @@ class UserSettingsModelTest(test_utils.GenericTestBase):
         user = user_models.UserSettingsModel.get_by_role(
             feconf.ROLE_ID_ADMIN)
         self.assertEqual(user[0].role, feconf.ROLE_ID_ADMIN)
+
+    def test_export_data_nonexistent_user(self):
+        with self.assertRaises(user_models.UserSettingsModel
+                               .EntityNotFoundError):
+            user_models.UserSettingsModel.export_data('fake_user')
 
     def test_export_data_trivial(self):
         user = user_models.UserSettingsModel.get_by_id(self.USER_1_ID)
@@ -985,6 +995,11 @@ class ExplorationUserDataModelTest(test_utils.GenericTestBase):
             self.USER_1_ID, 'unknown_exp_id')
 
         self.assertEqual(retrieved_object, None)
+
+    def test_export_data_nonexistent_user(self):
+        user_data = user_models.ExplorationUserDataModel.export_data(
+            'fake_user')
+        self.assertEqual(user_data, {})
 
     def test_export_data_one_exploration(self):
         """Test export data when user has one exploration."""

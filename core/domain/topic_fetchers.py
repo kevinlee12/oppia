@@ -24,7 +24,8 @@ from core.domain import topic_domain
 from core.platform import models
 import feconf
 
-(topic_models,) = models.Registry.import_models([models.NAMES.topic])
+(skill_models, topic_models,) = models.Registry.import_models([
+    models.NAMES.skill, models.NAMES.topic])
 memcache_services = models.Registry.import_memcache_services()
 
 
@@ -141,6 +142,8 @@ def get_topic_from_model(topic_model):
             versioned_additional_story_references)
     return topic_domain.Topic(
         topic_model.id, topic_model.name,
+        topic_model.abbreviated_name,
+        topic_model.thumbnail_filename,
         topic_model.description, [
             topic_domain.StoryReference.from_dict(reference)
             for reference in versioned_canonical_story_references[
@@ -224,3 +227,31 @@ def get_topic_by_name(topic_name):
 
     topic = get_topic_from_model(topic_model)
     return topic
+
+
+def get_all_topics_with_skills():
+    """Returns a list of topics with linked skills.
+
+    Returns:
+        list(Topic). A list of topics with skills.
+    """
+    all_topic_models = topic_models.TopicModel.get_all()
+    topics_with_skills = []
+    for topic_model in all_topic_models:
+        if topic_model:
+            topic = get_topic_from_model(topic_model)
+            if topic.get_all_skill_ids():
+                topics_with_skills.append(topic)
+    return topics_with_skills
+
+
+def get_all_topics():
+    """Returns all the topics present in the datastore.
+
+    Returns:
+        list(Topic). The list of topics present in the datastore.
+    """
+    backend_topic_models = topic_models.TopicModel.get_all()
+    topics = [
+        get_topic_from_model(topic) for topic in backend_topic_models]
+    return topics

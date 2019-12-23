@@ -71,15 +71,35 @@ class GeneralFeedbackThreadModel(base_models.BaseModel):
     # Summary text of the thread.
     summary = ndb.TextProperty(indexed=False)
     # Specifies whether this thread has a related suggestion.
-    has_suggestion = ndb.BooleanProperty(
-        indexed=True, default=False, required=True)
-    # The number of messages in the thread.
+    has_suggestion = (
+        ndb.BooleanProperty(indexed=True, default=False, required=True))
+
+    # Cached value of the number of messages in the thread.
     message_count = ndb.IntegerProperty(indexed=True, default=0)
+    # Cached text of the last message in the thread with non-empty content, or
+    # None if there is no such message.
+    last_nonempty_message_text = ndb.StringProperty(indexed=True)
+    # Cached ID for the user of the last message in the thread with non-empty
+    # content, or None if the message was made anonymously or if there is no
+    # such message.
+    last_nonempty_message_author_id = ndb.StringProperty(indexed=True)
 
     @staticmethod
     def get_deletion_policy():
         """General feedback thread needs to be pseudonymized for the user."""
         return base_models.DELETION_POLICY.LOCALLY_PSEUDONYMIZE
+
+    @classmethod
+    def has_reference_to_user_id(cls, user_id):
+        """Check whether GeneralFeedbackThreadModel exists for user.
+
+        Args:
+            user_id: str. The ID of the user whose data should be checked.
+
+        Returns:
+            bool. Whether any models refer to the given user ID.
+        """
+        return cls.query(cls.original_author_id == user_id).get() is not None
 
     @classmethod
     def export_data(cls, user_id):
@@ -200,13 +220,25 @@ class GeneralFeedbackMessageModel(base_models.BaseModel):
     text = ndb.StringProperty(indexed=False)
     # Whether the incoming message is received by email (as opposed to via
     # the web).
-    received_via_email = ndb.BooleanProperty(
-        default=False, indexed=True, required=True)
+    received_via_email = (
+        ndb.BooleanProperty(default=False, indexed=True, required=True))
 
     @staticmethod
     def get_deletion_policy():
         """General feedback message needs to be pseudonymized for the user."""
         return base_models.DELETION_POLICY.LOCALLY_PSEUDONYMIZE
+
+    @classmethod
+    def has_reference_to_user_id(cls, user_id):
+        """Check whether GeneralFeedbackMessageModel exists for user.
+
+        Args:
+            user_id: str. The ID of the user whose data should be checked.
+
+        Returns:
+            bool. Whether any models refer to the given user ID.
+        """
+        return cls.query(cls.author_id == user_id).get() is not None
 
     @classmethod
     def export_data(cls, user_id):
@@ -414,6 +446,18 @@ class GeneralFeedbackThreadUserModel(base_models.BaseModel):
         return base_models.DELETION_POLICY.DELETE
 
     @classmethod
+    def has_reference_to_user_id(cls, user_id):
+        """Check whether GeneralFeedbackThreadUserModel exists for user.
+
+        Args:
+            user_id: str. The ID of the user whose data should be checked.
+
+        Returns:
+            bool. Whether any models refer to the given user ID.
+        """
+        return cls.query(cls.user_id == user_id).get() is not None
+
+    @classmethod
     def generate_full_id(cls, user_id, thread_id):
         """Generates the full message id of the format:
             <user_id.thread_id>.
@@ -519,6 +563,19 @@ class FeedbackAnalyticsModel(base_models.BaseMapReduceBatchResultsModel):
         return base_models.DELETION_POLICY.KEEP_IF_PUBLIC
 
     @classmethod
+    def has_reference_to_user_id(cls, unused_user_id):
+        """FeedbackAnalyticsModel doesn't reference any user_id directly.
+
+        Args:
+            unused_user_id: str. The (unused) ID of the user whose data
+            should be checked.
+
+        Returns:
+            bool. Whether any models refer to the given user ID.
+        """
+        return False
+
+    @classmethod
     def create(cls, model_id, num_open_threads, num_total_threads):
         """Creates a new FeedbackAnalyticsModel entry.
 
@@ -562,3 +619,15 @@ class UnsentFeedbackEmailModel(base_models.BaseModel):
     def get_deletion_policy():
         """Unsent feedback email is kept until sent."""
         return base_models.DELETION_POLICY.KEEP
+
+    @classmethod
+    def has_reference_to_user_id(cls, user_id):
+        """Check whether UnsentFeedbackEmailModel exists for user.
+
+        Args:
+            user_id: str. The ID of the user whose data should be checked.
+
+        Returns:
+            bool. Whether the model for user_id exists.
+        """
+        return cls.get_by_id(user_id) is not None

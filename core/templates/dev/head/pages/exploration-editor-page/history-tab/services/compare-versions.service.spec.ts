@@ -42,6 +42,7 @@ import { WrittenTranslationObjectFactory } from
   'domain/exploration/WrittenTranslationObjectFactory';
 import { WrittenTranslationsObjectFactory } from
   'domain/exploration/WrittenTranslationsObjectFactory';
+import { UpgradedServices } from 'services/UpgradedServices';
 // ^^^ This block is to be removed.
 
 require(
@@ -50,6 +51,12 @@ require(
 
 describe('Compare versions service', function() {
   beforeEach(angular.mock.module('oppia'));
+  beforeEach(angular.mock.module('oppia', function($provide) {
+    var ugs = new UpgradedServices();
+    for (let [key, value] of Object.entries(ugs.getUpgradedServices())) {
+      $provide.value(key, value);
+    }
+  }));
 
   describe('compare versions service', function() {
     var cvs = null;
@@ -1211,6 +1218,12 @@ describe('Compare versions service', function() {
         target: 2,
         linkProperty: 'added'
       }]);
+    });
+
+    it('shouldn\'t compare versions if v1 > v2.', function() {
+      expect(function() {
+        cvs.getDiffGraphData(8, 5);
+      }).toThrow(Error('Tried to compare v1 > v2.'));
     });
   });
 });

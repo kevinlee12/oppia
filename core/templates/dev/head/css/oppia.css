@@ -607,6 +607,10 @@ textarea {
   Styles for the link to the site feedback form.
 */
 .oppia-site-feedback {
+  background-color: #fff;
+  border-radius: 2px;
+  bottom: 4px;
+  color: rgba(0,0,0,0.87);
   cursor: pointer;
   left: 4px;
   opacity: 0.5;
@@ -925,7 +929,6 @@ textarea {
 .navbar-light .navbar-nav .nav-link {
   color: white;
   text-align: center;
-  width: 46px;
 }
 .navbar-light .navbar-nav .show > .nav-link,
 .navbar-light .navbar-nav .active > .nav-link,
@@ -933,7 +936,6 @@ textarea {
 .navbar-light .navbar-nav .nav-link.active {
   color: white;
   text-align: center;
-  width: 46px;
 }
 .navbar-light .navbar-nav .nav-link:hover,
 .navbar-light .navbar-nav .nav-link:focus {
@@ -1552,16 +1554,10 @@ md-card.oppia-dashboard-tile {
 }
 
 @media(max-width: 1099px) {
-  .oppia-editor-publish-button {
-    padding-bottom: 3px;
-  }
-  .oppia-save-draft-button {
-    padding-bottom: 3px;
-    width: 40px;
-  }
+  .oppia-editor-publish-button,
+  .oppia-save-draft-button,
   .oppia-save-changes-button {
     padding-bottom: 3px;
-    width: 55px;
   }
 }
 
@@ -1571,16 +1567,10 @@ md-card.oppia-dashboard-tile {
     display: none;
   }
 
-  .oppia-editor-publish-button {
-    padding-bottom: 6px;
-  }
-  .oppia-save-draft-button {
-    padding-bottom: 6px;
-    width: 125px;
-  }
+  .oppia-editor-publish-button,
+  .oppia-save-draft-button,
   .oppia-save-changes-button {
     padding-bottom: 6px;
-    width: 136px;
   }
 }
 
@@ -1804,6 +1794,14 @@ pre.oppia-pre-wrapped-text {
   background-color: #F89406;
   font-size: 16px;
   max-width: 550px;
+}
+
+.toast-success {
+  background-color: #28a745;
+}
+
+.toast-info {
+  background-color: #337ab7;
 }
 
 .tooltip {
@@ -2415,8 +2413,10 @@ oppia-parameter {
   opacity: .5;
 }
 
-.modal-content, .modal-dialog {
-  min-width: 590px;
+@media(min-width: 768px) {
+  .modal-content, .modal-dialog {
+    min-width: 590px;
+  }
 }
 .modal-content {
   background-clip: padding-box;
@@ -2594,7 +2594,7 @@ div#ng-curtain {
 }
 
 .oppia-navbar-brand-name {
-  float: left;
+  float: right;
   height: 56px;
   line-height: 20px;
   margin-left: -10px;
@@ -3072,6 +3072,9 @@ md-card.preview-conversation-skin-supplemental-card {
   font-size: 0.75em;
   list-style-type: none;
   text-align: center;
+}
+.oppia-navbar-nav.oppia-navbar-profile > li:hover {
+  background-color: #009688
 }
 .oppia-activity-summary-tile.small-width .metrics li {
   display: block;
@@ -4520,4 +4523,8 @@ div.oppia-issues-learner-action {
 .nav .tooltip-inner {
   max-width: none;
   white-space: nowrap;
+}
+
+.oppia-rule-preview {
+  word-wrap: break-word;
 }

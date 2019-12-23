@@ -55,8 +55,8 @@ class BaseTopicEditorControllerTests(test_utils.GenericTestBase):
             self.skill_id_2, self.admin_id, 'Skill Description 2')
         self.topic_id = topic_services.get_new_topic_id()
         self.save_new_topic(
-            self.topic_id, self.admin_id, 'Name', 'Description', [], [],
-            [self.skill_id, self.skill_id_2], [], 1)
+            self.topic_id, self.admin_id, 'Name', 'abbrev', None,
+            'Description', [], [], [self.skill_id, self.skill_id_2], [], 1)
         changelist = [topic_domain.TopicChange({
             'cmd': topic_domain.CMD_ADD_SUBTOPIC,
             'title': 'Title',
@@ -84,8 +84,9 @@ class TopicEditorStoryHandlerTests(BaseTopicEditorControllerTests):
         self.assertEqual(response['additional_story_summary_dicts'], [])
 
         self.save_new_topic(
-            topic_id, self.admin_id, 'New name', 'New description',
-            [canonical_story_id], [additional_story_id], [self.skill_id],
+            topic_id, self.admin_id, 'New name', 'abbrev', None,
+            'New description', [canonical_story_id],
+            [additional_story_id], [self.skill_id],
             [], 1)
 
         self.save_new_story(
@@ -278,6 +279,7 @@ class TopicEditorTests(BaseTopicEditorControllerTests):
 
 
     def test_editable_topic_handler_get(self):
+        skill_services.delete_skill(self.admin_id, self.skill_id_2)
         # Check that non-admins cannot access the editable topic data.
         self.login(self.NEW_USER_EMAIL)
         self.get_json(
@@ -288,14 +290,29 @@ class TopicEditorTests(BaseTopicEditorControllerTests):
 
         # Check that admins can access the editable topic data.
         self.login(self.ADMIN_EMAIL)
+        with self.swap(feconf, 'CAN_SEND_EMAILS', True):
+            messages = self.mail_stub.get_sent_messages(
+                to=feconf.ADMIN_EMAIL_ADDRESS)
+            self.assertEqual(len(messages), 0)
+            json_response = self.get_json(
+                '%s/%s' % (
+                    feconf.TOPIC_EDITOR_DATA_URL_PREFIX, self.topic_id))
+            self.assertEqual(self.topic_id, json_response['topic_dict']['id'])
+            self.assertEqual(
+                'Skill Description',
+                json_response['skill_id_to_description_dict'][self.skill_id])
 
-        json_response = self.get_json(
-            '%s/%s' % (
-                feconf.TOPIC_EDITOR_DATA_URL_PREFIX, self.topic_id))
-        self.assertEqual(self.topic_id, json_response['topic_dict']['id'])
-        self.assertEqual(
-            'Skill Description',
-            json_response['skill_id_to_description_dict'][self.skill_id])
+            messages = self.mail_stub.get_sent_messages(
+                to=feconf.ADMIN_EMAIL_ADDRESS)
+            expected_email_html_body = (
+                'The deleted skills: %s are still'
+                ' present in topic with id %s' % (
+                    self.skill_id_2, self.topic_id))
+            self.assertEqual(len(messages), 1)
+            self.assertIn(
+                expected_email_html_body,
+                messages[0].html.decode())
+
         self.logout()
 
         # Check that editable topic handler is accessed only when a topic id
@@ -392,17 +409,33 @@ class TopicEditorTests(BaseTopicEditorControllerTests):
         }
         self.login(self.ADMIN_EMAIL)
         csrf_token = self.get_new_csrf_token()
+        skill_services.delete_skill(self.admin_id, self.skill_id_2)
 
-        json_response = self.put_json(
-            '%s/%s' % (
-                feconf.TOPIC_EDITOR_DATA_URL_PREFIX, self.topic_id),
-            change_cmd, csrf_token=csrf_token)
-        self.assertEqual(self.topic_id, json_response['topic_dict']['id'])
-        self.assertEqual('A new name', json_response['topic_dict']['name'])
-        self.assertEqual(2, len(json_response['topic_dict']['subtopics']))
-        self.assertEqual(
-            'Skill Description',
-            json_response['skill_id_to_description_dict'][self.skill_id])
+        with self.swap(feconf, 'CAN_SEND_EMAILS', True):
+            messages = self.mail_stub.get_sent_messages(
+                to=feconf.ADMIN_EMAIL_ADDRESS)
+            self.assertEqual(len(messages), 0)
+            json_response = self.put_json(
+                '%s/%s' % (
+                    feconf.TOPIC_EDITOR_DATA_URL_PREFIX, self.topic_id),
+                change_cmd, csrf_token=csrf_token)
+            self.assertEqual(self.topic_id, json_response['topic_dict']['id'])
+            self.assertEqual('A new name', json_response['topic_dict']['name'])
+            self.assertEqual(2, len(json_response['topic_dict']['subtopics']))
+            self.assertEqual(
+                'Skill Description',
+                json_response['skill_id_to_description_dict'][self.skill_id])
+
+            messages = self.mail_stub.get_sent_messages(
+                to=feconf.ADMIN_EMAIL_ADDRESS)
+            expected_email_html_body = (
+                'The deleted skills: %s are still'
+                ' present in topic with id %s' % (
+                    self.skill_id_2, self.topic_id))
+            self.assertEqual(len(messages), 1)
+            self.assertIn(
+                expected_email_html_body,
+                messages[0].html.decode())
 
         # Test if the corresponding subtopic pages were created.
         json_response = self.get_json(
@@ -487,8 +520,8 @@ class TopicEditorTests(BaseTopicEditorControllerTests):
 
         topic_id_1 = topic_services.get_new_topic_id()
         self.save_new_topic(
-            topic_id_1, self.admin_id, 'Name 1', 'Description 1', [], [],
-            [self.skill_id], [], 1)
+            topic_id_1, self.admin_id, 'Name 1', 'abbrev', None,
+            'Description 1', [], [], [self.skill_id], [], 1)
 
         json_response = self.put_json(
             '%s/%s' % (

@@ -115,6 +115,15 @@ def get_redirect_route(regex_route, handler, defaults=None):
 
     Warning: this method strips off parameters after the trailing slash. URLs
     with parameters should be formulated without the trailing slash.
+
+    Args:
+        regex_route: unicode. A raw string representing a route.
+        handler: BaseHandler. A callable to handle the route.
+        defaults: dict. Optional defaults parameter to be passed
+            into the RedirectRoute object.
+
+    Returns:
+        RedirectRoute. A RedirectRoute object for redirects.
     """
     if defaults is None:
         defaults = {}
@@ -223,6 +232,9 @@ URLS = MAPREDUCE_HANDLERS + [
         r'%s/<opportunity_type>' % feconf.COMMUNITY_OPPORTUNITIES_DATA_URL,
         community_dashboard.ContributionOpportunitiesHandler),
     get_redirect_route(
+        r'/gettranslatabletexthandler',
+        community_dashboard.TranslatableTextHandler),
+    get_redirect_route(
         r'%s' % feconf.NEW_SKILL_URL,
         topics_and_skills_dashboard.NewSkillHandler),
     get_redirect_route(
@@ -314,7 +326,7 @@ URLS = MAPREDUCE_HANDLERS + [
 
     get_redirect_route(
         r'/assetsdevhandler/<page_context>/<page_identifier>/'
-        'assets/<asset_type:(image|audio)>/<encoded_filename>',
+        'assets/<asset_type:(image|audio|thumbnail)>/<encoded_filename>',
         resources.AssetDevHandler),
     get_redirect_route(
         r'/value_generator_handler/<generator_id>',
@@ -382,6 +394,7 @@ URLS = MAPREDUCE_HANDLERS + [
         profile.ProfilePictureHandlerByUsernameHandler),
     get_redirect_route(r'%s' % feconf.SIGNUP_URL, profile.SignupPage),
     get_redirect_route(r'%s' % feconf.SIGNUP_DATA_URL, profile.SignupHandler),
+    get_redirect_route(feconf.DELETE_ACCOUNT_URL, profile.DeleteAccountPage),
     get_redirect_route(
         r'%s' % feconf.USERNAME_CHECK_DATA_URL, profile.UsernameCheckHandler),
     get_redirect_route(
@@ -560,12 +573,18 @@ URLS = MAPREDUCE_HANDLERS + [
         r'%s/resubmit/<suggestion_id>' % feconf.SUGGESTION_ACTION_URL_PREFIX,
         suggestion.ResubmitSuggestionHandler),
     get_redirect_route(
-        r'%s/topic/<target_id>/<suggestion_id>' %
+        r'%s/skill/<target_id>/<suggestion_id>' %
         feconf.SUGGESTION_ACTION_URL_PREFIX,
-        suggestion.SuggestionToTopicActionHandler),
+        suggestion.SuggestionToSkillActionHandler),
     get_redirect_route(
         r'%s' % feconf.SUGGESTION_LIST_URL_PREFIX,
         suggestion.SuggestionListHandler),
+    get_redirect_route(
+        r'/getreviewablesuggestions/<target_type>/<suggestion_type>',
+        suggestion.ReviewableSuggestionsHandler),
+    get_redirect_route(
+        r'/getsubmittedsuggestions/<target_type>/<suggestion_type>',
+        suggestion.UserSubmittedSuggestionsHandler),
     get_redirect_route(
         r'%s' % feconf.SUBSCRIBE_URL_PREFIX,
         subscriptions.SubscribeHandler),
@@ -622,11 +641,14 @@ URLS = MAPREDUCE_HANDLERS + [
         r'%s/<comma_separated_skill_ids>' % feconf.CONCEPT_CARD_DATA_URL_PREFIX,
         concept_card_viewer.ConceptCardDataHandler),
     get_redirect_route(
-        r'%s/<question_id>/<skill_id>' % feconf.QUESTION_SKILL_LINK_URL_PREFIX,
+        r'%s/<question_id>' % feconf.QUESTION_SKILL_LINK_URL_PREFIX,
         question_editor.QuestionSkillLinkHandler),
     get_redirect_route(
         r'%s/<comma_separated_skill_ids>' % feconf.SKILL_DATA_URL_PREFIX,
         skill_editor.SkillDataHandler),
+    get_redirect_route(
+        r'%s' % feconf.FETCH_SKILLS_URL_PREFIX,
+        skill_editor.FetchSkillsHandler),
     get_redirect_route(
         r'%s/<skill_id>' % feconf.SKILL_EDITOR_URL_PREFIX,
         skill_editor.SkillEditorPage),
@@ -639,9 +661,6 @@ URLS = MAPREDUCE_HANDLERS + [
     get_redirect_route(
         r'%s/<skill_id>' % feconf.SKILL_RIGHTS_URL_PREFIX,
         skill_editor.SkillRightsHandler),
-    get_redirect_route(
-        r'%s/<skill_id>' % feconf.SKILL_PUBLISH_URL_PREFIX,
-        skill_editor.SkillPublishHandler),
 
     get_redirect_route(
         r'%s/<story_id>' % feconf.STORY_EDITOR_URL_PREFIX,

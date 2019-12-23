@@ -35,7 +35,6 @@ export class TopicDomainConstants {
   public static CMD_DELETE_ADDITIONAL_STORY = 'delete_additional_story';
   public static CMD_DELETE_CANONICAL_STORY = 'delete_canonical_story';
   public static CMD_DELETE_SUBTOPIC = 'delete_subtopic';
-  public static CMD_ADD_UNCATEGORIZED_SKILL_ID = 'add_uncategorized_skill_id';
   public static
     CMD_REMOVE_UNCATEGORIZED_SKILL_ID = 'remove_uncategorized_skill_id';
   public static CMD_MOVE_SKILL_ID_TO_SUBTOPIC = 'move_skill_id_to_subtopic';
@@ -48,6 +47,8 @@ export class TopicDomainConstants {
     CMD_UPDATE_SUBTOPIC_PAGE_PROPERTY = 'update_subtopic_page_property';
 
   public static TOPIC_PROPERTY_NAME = 'name';
+  public static TOPIC_PROPERTY_ABBREVIATED_NAME = 'abbreviated_name';
+  public static TOPIC_PROPERTY_THUMBNAIL_FILENAME = 'thumbnail_filename';
   public static TOPIC_PROPERTY_DESCRIPTION = 'description';
   public static TOPIC_PROPERTY_LANGUAGE_CODE = 'language_code';
 
