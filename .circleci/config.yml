@@ -458,11 +458,7 @@ workflows:
       #     requires:
       #       - setup
       - library_e2e_tests:
-          requires:
-            - setup
       - navigation_e2e_tests:
-          requires:
-            - setup
       # - profileMenu_e2e_tests:
       #     requires:
       #       - setup
