@@ -421,69 +421,69 @@ workflows:
       - backend_tests:
          requires:
            - setup
-      - accessibility_e2e_tests:
-          requires:
-            - setup
-      - additionalEditorAndPlayerFeatures_e2e_tests:
-          requires:
-            - setup
-      - collections_e2e_tests:
-          requires:
-            - setup
-      - coreEditorAndPlayerFeatures_e2e_tests:
-          requires:
-            - setup
-      - embedding_e2e_tests:
-          requires:
-            - setup
-      - explorationFeedbackTab_e2e_tests:
-          requires:
-            - setup
-      - explorationHistoryTab_e2e_tests:
-          requires:
-            - setup
-      - explorationStatisticsTab_e2e_tests:
-          requires:
-            - setup
-      - explorationTranslationTab_e2e_tests:
-          requires:
-            - setup
-      - extensions_e2e_tests:
-          requires:
-            - setup
-      - learnerDashboard_e2e_tests:
-          requires:
-            - setup
-      - learner_e2e_tests:
-          requires:
-            - setup
+      # - accessibility_e2e_tests:
+      #     requires:
+      #       - setup
+      # - additionalEditorAndPlayerFeatures_e2e_tests:
+      #     requires:
+      #       - setup
+      # - collections_e2e_tests:
+      #     requires:
+      #       - setup
+      # - coreEditorAndPlayerFeatures_e2e_tests:
+      #     requires:
+      #       - setup
+      # - embedding_e2e_tests:
+      #     requires:
+      #       - setup
+      # - explorationFeedbackTab_e2e_tests:
+      #     requires:
+      #       - setup
+      # - explorationHistoryTab_e2e_tests:
+      #     requires:
+      #       - setup
+      # - explorationStatisticsTab_e2e_tests:
+      #     requires:
+      #       - setup
+      # - explorationTranslationTab_e2e_tests:
+      #     requires:
+      #       - setup
+      # - extensions_e2e_tests:
+      #     requires:
+      #       - setup
+      # - learnerDashboard_e2e_tests:
+      #     requires:
+      #       - setup
+      # - learner_e2e_tests:
+      #     requires:
+      #       - setup
       - library_e2e_tests:
           requires:
             - setup
       - navigation_e2e_tests:
           requires:
             - setup
-      - profileMenu_e2e_tests:
-          requires:
-            - setup
-      - publication_e2e_tests:
-          requires:
-            - setup
-      - skillEditorPage_e2e_tests:
-          requires:
-            - setup
-      - subscriptions_e2e_tests:
-          requires:
-            - setup
-      - topicsAndSkillsDashboard_e2e_tests:
-          requires:
-            - setup
-      - topicAndStoryEditor_e2e_tests:
-          requires:
-            - setup
-      - users_e2e_tests:
-          requires:
-            - setup
+      # - profileMenu_e2e_tests:
+      #     requires:
+      #       - setup
+      # - publication_e2e_tests:
+      #     requires:
+      #       - setup
+      # - skillEditorPage_e2e_tests:
+      #     requires:
+      #       - setup
+      # - subscriptions_e2e_tests:
+      #     requires:
+      #       - setup
+      # - topicsAndSkillsDashboard_e2e_tests:
+      #     requires:
+      #       - setup
+      # - topicAndStoryEditor_e2e_tests:
+      #     requires:
+      #       - setup
+      # - users_e2e_tests:
+      #     requires:
+      #       - setup
 
 notify:
   webhooks:
