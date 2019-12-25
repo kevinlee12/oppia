@@ -411,16 +411,16 @@ workflows:
   version: 2
   circleci_tests:
     jobs:
-      - setup
-      - lint_tests:
-          requires:
-            - setup
-      - frontend_tests:
-         requires:
-           - setup
-      - backend_tests:
-         requires:
-           - setup
+      # - setup
+      # - lint_tests:
+      #     requires:
+      #       - setup
+      # - frontend_tests:
+      #    requires:
+      #      - setup
+      # - backend_tests:
+      #    requires:
+      #      - setup
       # - accessibility_e2e_tests:
       #     requires:
       #       - setup
