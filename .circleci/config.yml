@@ -120,7 +120,7 @@ jobs:
       - run:
           name: Run e2e test
           command: |
-            bash scripts/run_e2e_tests.sh --suite="full" --prod_env
+            bash scripts/run_e2e_tests.sh --suite="full" --prod_env --sharding=False
 
 notify:
   webhooks:
