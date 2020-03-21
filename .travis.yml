@@ -104,20 +104,20 @@ script:
 - if [ "$RUN_E2E_TESTS_USERS" == 'true' ]; then travis_retry python -m scripts.run_e2e_tests --suite="users" --prod_env; fi
 
 
-cache:
-  # Cache Oppia's dependencies.
-  directories:
-    - ../oppia_tools/
-    - node_modules/
-    - third_party/
-    - $HOME/.cache/pip
-    - $HOME/.cache/TravisChrome/
-    - backend_prod_files/templates/
-    - build/templates/
-    - backend_prod_files/extensions/
-    - build/extensions/
+# cache:
+#   # Cache Oppia's dependencies.
+#   directories:
+#     - ../oppia_tools/
+#     - node_modules/
+#     - third_party/
+#     - $HOME/.cache/pip
+#     - $HOME/.cache/TravisChrome/
+#     - backend_prod_files/templates/
+#     - build/templates/
+#     - backend_prod_files/extensions/
+#     - build/extensions/
 
-before_cache:
-  # Delete python bytecode to prevent cache rebuild.
-  - find third_party -name "*.pyc" -print -delete
-  - find backend_prod_files/extensions/ -name "*.pyc" -print -delete
+# before_cache:
+#   # Delete python bytecode to prevent cache rebuild.
+#   - find third_party -name "*.pyc" -print -delete
+#   - find backend_prod_files/extensions/ -name "*.pyc" -print -delete

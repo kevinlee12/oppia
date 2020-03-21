@@ -238,7 +238,8 @@ exports.config = {
         '--use-fake-device-for-media-stream',
         '--use-fake-ui-for-media-stream',
         '--use-file-for-fake-audio-capture=data/cafe.mp3',
-      ]
+      ],
+      w3c: false
     },
     prefs: {
       intl: {
