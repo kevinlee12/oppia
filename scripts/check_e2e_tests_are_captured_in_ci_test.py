@@ -61,7 +61,7 @@ class CheckE2eTestsCapturedInCITests(test_utils.GenericTestBase):
         self.assertEqual(
             EXPECTED_PROTRACTOR_CONF_FILE, actual_protractor_config_file)
 
-    def test_get_e2e_suite_names_from_jobs_travis_yml_file(self):
+    def test_check_e2e_suite_names_from_jobs_travis_yml_file_not_empty(self):
         def mock_read_travis_yml_file():
             travis_ci_file = python_utils.open_file(
                 os.path.join(
@@ -75,8 +75,8 @@ class CheckE2eTestsCapturedInCITests(test_utils.GenericTestBase):
         with dummy_path:
             actual_travis_jobs = (
                 check_e2e_tests_are_captured_in_ci
-                .get_e2e_suite_names_from_jobs_travis_yml_file())
-        self.assertEqual(DUMMY_TEST_SUITES, actual_travis_jobs)
+                .check_e2e_suite_names_from_jobs_travis_yml_file_not_empty())
+        self.assertTrue(actual_travis_jobs)
 
     def test_get_e2e_suite_names_from_script_travis_yml_file(self):
         def mock_read_travis_yml_file():
@@ -124,7 +124,7 @@ class CheckE2eTestsCapturedInCITests(test_utils.GenericTestBase):
 
         mock_travis_jobs = self.swap(
             check_e2e_tests_are_captured_in_ci,
-            'get_e2e_suite_names_from_jobs_travis_yml_file',
+            'check_e2e_suite_names_from_jobs_travis_yml_file_not_empty',
             mock_get_e2e_suite_names_from_travis_ci)
 
         mock_travis_scripts = self.swap(
@@ -202,7 +202,7 @@ class CheckE2eTestsCapturedInCITests(test_utils.GenericTestBase):
 
         mock_e2e_travis_jobs = self.swap(
             check_e2e_tests_are_captured_in_ci,
-            'get_e2e_suite_names_from_jobs_travis_yml_file',
+            'check_e2e_suite_names_from_jobs_travis_yml_file_not_empty',
             mock_return_empty_list)
 
         with travis_path_swap, mock_tests_to_remove:
