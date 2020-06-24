@@ -72,8 +72,12 @@ def get_e2e_suite_names_from_script_travis_yml_file():
     script_str = python_utils.convert_to_bytes(travis_file_content['script'])
     # The following line extracts the test suites from patterns like
     # python -m scripts.run_e2e_tests --suite="accessibility".
+<<<<<<< HEAD
     e2e_test_suite_regex = re.compile(
         r'--suite="([a-zA-Z_-]*)"')
+=======
+    e2e_test_suite_regex = re.compile(r'--suite="([a-zA-Z_-]*)"')
+>>>>>>> develop
     suites_list = e2e_test_suite_regex.findall(script_str)
 
     return sorted(suites_list)
@@ -178,12 +182,20 @@ def main():
 
     python_utils.PRINT('Checking e2e tests are captured in .travis.yml...')
     protractor_test_suites = get_e2e_suite_names_from_protractor_file()
+<<<<<<< HEAD
+=======
+    travis_e2e_suites = get_e2e_suite_names_from_jobs_travis_yml_file()
+>>>>>>> develop
     travis_e2e_scripts = get_e2e_suite_names_from_script_travis_yml_file()
 
     for excluded_test in TEST_SUITES_NOT_RUN_ON_TRAVIS:
         protractor_test_suites.remove(excluded_test)
 
+<<<<<<< HEAD
     if not check_e2e_suite_names_from_jobs_travis_yml_file_not_empty():
+=======
+    if not travis_e2e_suites:
+>>>>>>> develop
         raise Exception('The e2e test suites that have been extracted from '
                         'jobs section from travis.ci are empty.')
     if not travis_e2e_scripts:
